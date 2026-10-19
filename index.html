@@ -512,6 +512,9 @@ ball(g,.13,.32,1.5,0,0x3a2a2a);ball(g,.13,-.32,1.5,0,0x3a2a2a);limb(g,[.3,1.5,0]
 pm(g,.09,.12,.8,.12,1.3,-.35,0x15161c);ball(g,.2,0,1.8,0,0xe0b090,.9,1.05,.95);ball(g,.24,0,1.88,0,0x2b2d36,1,.75,1);pm(g,.3,.1,.08,0,1.8,-.2,0xd8344a);
 const bar=new THREE.Sprite(new THREE.SpriteMaterial({color:0xff3355,depthTest:false}));bar.position.y=2.4;bar.scale.set(.8,.09,1);g.add(bar);scene.add(g);
 return{g,l1,l2,bar,hp:100,x:0,y:0,z:0,yaw:0,tx:0,tz:0,cd:1,dead:false,t:0,ph:Math.random()*6}}
+const DOX=1000;let MAPID='city',DIST=null,curZones=zones,sea2=null;
+const MAPS={city:{n:'Nova City',spawn:()=>[0,14],cx:0,hw:65},dist:{n:'Distrito Piloto',spawn:()=>{const q=DIST.spawns[(Math.random()*DIST.spawns.length)|0];return[DOX+q[0],q[1]]},cx:DOX,hw:82}};
+function respawnP(){const q=MAPS[MAPID].spawn();P.x=q[0];P.z=q[1];P.y=0;P.vy=0}
 const flatOk=(x,z)=>{const g=groundAt(x,z);return MAPID==='city'?g===0:g>=0&&g<=.2};
 function pickT(e){for(let i=0;i<12;i++){const m=MAPS[MAPID],x=m.cx+(Math.random()*2-1)*m.hw,z=(Math.random()*2-1)*(MAPID==='city'?65:63);if(flatOk(x,z)){e.tx=x;e.tz=z;return}}e.tx=e.x;e.tz=e.z}
 function spawnE(e){for(let i=0;i<40;i++){const m=MAPS[MAPID],x=m.cx+(Math.random()*2-1)*m.hw,z=(Math.random()*2-1)*(MAPID==='city'?65:63);if(flatOk(x,z)&&Math.hypot(x-P.x,z-P.z)>35){e.x=x;e.z=z;break}}e.hp=100;e.dead=false;e.t=0;e.g.rotation.x=0;e.bar.visible=false;e.cd=1.5;pickT(e)}
@@ -873,9 +876,6 @@ function elevTick(dt){if(MAPID!=='dist'||!DIST||!DIST.el){useB.classList.remove(
  DIST.el.update(dt,P);useT-=dt;if(useT>0)return;useT=.1;useN=DIST.el.near(P);useB.classList.toggle('on',!!useN);
  if(useN)useB.textContent=useN.t==='in'?'Panel':'Llamar';if(!useN||useN.t!=='in')elp.classList.remove('on');else elpPaint()}
 // ===== MAPAS: ciudad original y Distrito Piloto =====
-const DOX=1000;let MAPID='city',DIST=null,curZones=zones,sea2=null;
-const MAPS={city:{n:'Nova City',spawn:()=>[0,14],cx:0,hw:65},dist:{n:'Distrito Piloto',spawn:()=>{const q=DIST.spawns[(Math.random()*DIST.spawns.length)|0];return[DOX+q[0],q[1]]},cx:DOX,hw:82}};
-function respawnP(){const q=MAPS[MAPID].spawn();P.x=q[0];P.z=q[1];P.y=0;P.vy=0}
 function setMap(id){
  if(id==='dist'&&!DIST){DIST=buildDistrict({THREE,scene,addCol,lands,rnd,winMat,mat,useComp,OX:DOX});
   sea2=sea.clone();sea2.material=sea.material;sea2.position.x=DOX;sea2.matrixAutoUpdate=true;scene.add(sea2);
