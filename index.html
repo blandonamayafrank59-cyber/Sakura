@@ -684,10 +684,14 @@ const wcv=document.createElement('canvas'),ecv=document.createElement('canvas');
  for(let i=0;i<4;i++)for(let j=0;j<4;j++){const on=rnd()<.33;x.fillStyle=on?'#ffe2a8':'#26314a';x.fillRect(i*16+3,j*16+4,10,9);if(on){y.fillStyle='#ffd9a0';y.fillRect(i*16+3,j*16+4,10,9)}}}
 const mkT=c=>{const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.magFilter=THREE.NearestFilter;return t};
 const winMatBig=new THREE.MeshLambertMaterial({map:mkT(wcv),vertexColors:true,emissive:0xffffff,emissiveMap:mkT(ecv),emissiveIntensity:useComp?2.3:.9});
+const tcv=document.createElement('canvas');tcv.width=tcv.height=64;{const x=tcv.getContext('2d');x.fillStyle='#dcdcdc';x.fillRect(0,0,64,64);x.fillStyle='#8f8f96';x.fillRect(0,0,64,3);x.fillRect(0,0,3,64);x.fillStyle='#ececec';for(let i=0;i<26;i++)x.fillRect((rnd()*60)|0,(rnd()*60)|0,3,2)}
+const tileM=new THREE.MeshLambertMaterial({map:mkT(tcv),vertexColors:true});let WX=4,WY=4;
+function tileQ(x0,z0,x1,z1,y,hex){if(x1-x0<.05||z1-z0<.05)return;const g=bk('T',(x0+x1)/2,(z0+z1)/2),c=jit(hexc(hex),.03),X0=OX+x0,X1=OX+x1,ref=[(X0+X1)/2,y-1,(z0+z1)/2];
+ quadO(g,[X0,y,z0],[X0,y,z1],[X1,y,z1],[X1,y,z0],c,ref,[[x0/2.5,z0/2.5],[x0/2.5,z1/2.5],[x1/2.5,z1/2.5],[x1/2.5,z0/2.5]])}
 // pared: la cara de afuera (out = N,S,E,W) lleva ventanas, las demás van lisas. Se junta con todo lo demás en lotes.
 function wallBox(x0,y0,z0,x1,y1,z1,out,hex,vert,topHex){
- const c=jit(hexc(hex),.05),cin=jit(hexc(0xc9ced8),.04),ct=hexc(topHex||0x4a4f58),gx=(x0+x1)/2,gz=(z0+z1)/2,gL=bk('L',gx,gz),gW=bk('W',gx,gz),ref=[OX+gx,(y0+y1)/2,gz],X0=OX+x0,X1=OX+x1,v0=y0/4,v1=y1/4;
- const F=(side,a,b,cc,d,u0,u1)=>{if(side===out)quadO(gW,a,b,cc,d,c,ref,[[u0/4,v0],[u1/4,v0],[u1/4,v1],[u0/4,v1]]);else quadO(gL,a,b,cc,d,cin,ref)};
+ const c=jit(hexc(hex),.05),cin=jit(hexc(0xc9ced8),.04),ct=hexc(topHex||0x4a4f58),gx=(x0+x1)/2,gz=(z0+z1)/2,gL=bk('L',gx,gz),gW=bk('W',gx,gz),ref=[OX+gx,(y0+y1)/2,gz],X0=OX+x0,X1=OX+x1,v0=y0/WY,v1=y1/WY;
+ const F=(side,a,b,cc,d,u0,u1)=>{if(side===out)quadO(gW,a,b,cc,d,c,ref,[[u0/WX,v0],[u1/WX,v0],[u1/WX,v1],[u0/WX,v1]]);else quadO(gL,a,b,cc,d,cin,ref)};
  F('N',[X0,y0,z0],[X1,y0,z0],[X1,y1,z0],[X0,y1,z0],x0,x1);F('S',[X0,y0,z1],[X1,y0,z1],[X1,y1,z1],[X0,y1,z1],x0,x1);
  F('W',[X0,y0,z0],[X0,y0,z1],[X0,y1,z1],[X0,y1,z0],z0,z1);F('E',[X1,y0,z0],[X1,y0,z1],[X1,y1,z1],[X1,y1,z0],z0,z1);
  quadO(gL,[X0,y1,z0],[X1,y1,z0],[X1,y1,z1],[X0,y1,z1],ct,ref);
@@ -721,7 +725,7 @@ function makeEl(p){const {sx0,sx1,sz0,sz1,gz0,gz1,fl,T}=p,SH=T(fl)+4,wc=0x59606b
     let tgt=want;if(!want&&el.zone(d,P)&&d.o>0){tgt=1;if(P.x>OX+sx0)P.x+=1.6*dt}
     const k=dt*1.6;d.o=d.o<tgt?Math.min(tgt,d.o+k):Math.max(tgt,d.o-k);el.setDoor(d)}
    if(el.pending&&!el.moving){const cur=doors[el.f];if(cur.o<=0){el.moving=true;el.pending=false}}
-   if(el.moving){const dy=T(el.tf)-el.y,st=Math.min(Math.abs(dy),(fl>5?5:3)*dt)*Math.sign(dy);el.y+=st;
+   if(el.moving){const dy=T(el.tf)-el.y,st=Math.min(Math.abs(dy),(fl>8?8:fl>5?5:3)*dt)*Math.sign(dy);el.y+=st;
     if(Math.abs(T(el.tf)-el.y)<1e-4){el.y=T(el.tf);el.moving=false;el.f=el.tf}}
    el.place()},
   near(P){const lx=P.x-OX;
@@ -733,43 +737,49 @@ function makeEl(p){const {sx0,sx1,sz0,sz1,gz0,gz1,fl,T}=p,SH=T(fl)+4,wc=0x59606b
 // o:{x0,z0,x1,z1, fl pisos, door:'N'|'S', back:puerta trasera, sty, kind:oficina/casa/..., fh altura de piso, gw medio ancho de puerta, gh alto de puerta,
 //    chests, el:ascensor, sign:texto}
 function hollow(o){
- const FH=o.fh||4.4,T=k=>T0+k*FH,fl=o.fl,th=.4,x0=o.x0,z0=o.z0,x1=o.x1,z1=o.z1,w=x1-x0,d=z1-z0,cx=(x0+x1)/2,cz=(z0+z1)/2;
- const tint=BST[o.sty]||0x888888,Hh=T(fl)+1.5,gw=o.gw||1.8,gh=o.gh||3.3,dc=o.dx||cx,kind=o.kind||'open';
+ const v2=!!o.v2,FH=o.fh||(v2?6:4.4),T=k=>T0+k*FH,fl=o.fl,th=.4,x0=o.x0,z0=o.z0,x1=o.x1,z1=o.z1,w=x1-x0,d=z1-z0,cx=(x0+x1)/2,cz=(z0+z1)/2;
+ const tint=BST[o.sty]||0x888888,Hh=T(fl)+1.5,gw=o.gw||(v2?2.2:1.8),gh=o.gh||(v2?4.8:3.3),dc=o.dx||cx,kind=o.kind||'open';
+ if(v2){WX=12;WY=4*FH}else{WX=4;WY=4}
  const hasN=o.door==='N'||(o.back&&o.door==='S'),hasS=o.door==='S'||(o.back&&o.door==='N');
  const front=(zA,zB,out,has)=>{if(!has){wallBox(x0,0,zA,x1,Hh,zB,out,tint);return}
   wallBox(x0,0,zA,dc-gw,Hh,zB,out,tint);wallBox(dc+gw,0,zA,x1,Hh,zB,out,tint);wallBox(dc-gw,gh,zA,dc+gw,Hh,zB,out,tint,true)};
  front(z0,z0+th,'N',hasN);front(z1-th,z1,'S',hasS);wallBox(x0,0,z0+th,x0+th,Hh,z1-th,'W',tint);wallBox(x1-th,0,z0+th,x1,Hh,z1-th,'E',tint);
  const n=Math.max(1,Math.round(FH/.45)-1),rise=FH/(n+1),xe=x0+3+.5*n+.2;
- const hA=[x0+th,z0+th,xe,z0+th+2.8],hB=[x0+th,z1-th-2.8,xe,z1-th];
+ const SW=v2?3:2,HZ=SW+.8,hA=[x0+th,z0+th,xe,z0+th+HZ],hB=[x0+th,z1-th-HZ,xe,z1-th];
  let sx0,sx1,sz0,sz1,gz0,gz1,hS=null;
  if(o.el){sx1=x1-th-.2;sx0=sx1-3;sz1=z1-th-.2;sz0=sz1-3;const gzc=mid(sz0,sz1);gz0=gzc-.9;gz1=gzc+.9;hS=[sx0,sz0,sx1,sz1]}
  const sub=(rs,h)=>{const r2=[];for(const r of rs){if(h[2]<=r[0]||h[0]>=r[2]||h[3]<=r[1]||h[1]>=r[3]){r2.push(r);continue}
   if(h[0]>r[0])r2.push([r[0],r[1],h[0],r[3]]);if(h[2]<r[2])r2.push([h[2],r[1],r[2],r[3]]);const lx=Math.max(r[0],h[0]),hx=Math.min(r[2],h[2]);
   if(h[1]>r[1])r2.push([lx,r[1],hx,h[1]]);if(h[3]<r[3])r2.push([lx,h[3],hx,r[3]])}return r2};
  for(let k=1;k<=fl;k++){let rs=[[x0+th,z0+th,x1-th,z1-th]];if(fl>1)rs=sub(rs,(k-1)%2===0?hA:hB);if(hS)rs=sub(rs,hS);
-  for(const r of rs)boxB(mid(r[0],r[2]),T(k)-.4,mid(r[1],r[3]),r[2]-r[0],.4,r[3]-r[1],k===fl?0x4a4f58:0x8b8f99,{solid:true,v:.03,bot:true,botHex:k===fl?0xb8bcc8:0xc4c8d2})}
- boxB(cx,T0-.13,cz,w-2*th,.16,d-2*th,0x9096a2,{v:.03});
- if(fl>1)for(let j=0;j<fl;j++){const zc=j%2?z1-th-1.4:z0+th+1.4;
-  for(let i=1;i<=n;i++)boxB(x0+3+.5*(i-.5),T(j),zc,.5,rise*i,2,0x9aa0ab,{solid:true,v:.05});
-  boxB(x0+2.7,T(j),zc,.5,.2,2,0xff4fa3,{k:'E',em:.7,v:0})}
+  for(const r of rs){if(v2&&k<fl)tileQ(r[0],r[1],r[2],r[3],T(k)+.01,0xc8c4b8);boxB(mid(r[0],r[2]),T(k)-.4,mid(r[1],r[3]),r[2]-r[0],.4,r[3]-r[1],k===fl?0x4a4f58:0x8b8f99,{solid:true,v:.03,bot:true,botHex:k===fl?0xb8bcc8:0xc4c8d2})}}
+ boxB(cx,T0-.13,cz,w-2*th,.16,d-2*th,0x9096a2,{v:.03});if(v2)tileQ(x0+th,z0+th,x1-th,z1-th,T0+.035,0xc8c4b8);
+ if(fl>1)for(let j=0;j<fl;j++){const zc=j%2?z1-th-SW/2-.4:z0+th+SW/2+.4;
+  for(let i=1;i<=n;i++)boxB(x0+3+.5*(i-.5),T(j),zc,.5,rise*i,SW,v2?0xa59a8c:0x9aa0ab,{solid:true,v:.05});
+  boxB(x0+2.7,T(j),zc,.5,.2,SW,0xff4fa3,{k:'E',em:.7,v:0})}
  // paredes interiores, zonas libres (K) y muebles
  const K=[],U=[];for(let k=0;k<=fl;k++)U.push([]);
  const gz=(zA,zB)=>[x0,zA,xe+2.4,zB];
- if(fl>1){K.push([x0,z0,xe+2.4,z0+th+3.6]);K.push([x0,z1-th-3.6,xe+2.4,z1])}
+ if(fl>1){K.push([x0,z0,xe+2.4,z0+th+HZ+.8]);K.push([x0,z1-th-HZ-.8,xe+2.4,z1])}
  const dz=(z,s)=>[dc-gw-1.2,s>0?z-5.5:z,dc+gw+1.2,s>0?z:z+5.5];
  if(hasN)K.push([dc-gw-1.2,z0,dc+gw+1.2,z0+5.5]);if(hasS)K.push([dc-gw-1.2,z1-5.5,dc+gw+1.2,z1]);
  if(hS)K.push([sx0-4.5,sz0-1,sx1,sz1+.5]);
- const rooms=kind==='office'||kind==='res'||kind==='clinic',zm=cz,xm=cx,gaps=[],cross=w>=34&&rooms;
+ const L2=v2&&w>=34&&d>=22&&(kind==='office'||kind==='res'||kind==='clinic'),xs=xe+2.8,xE=hS?sx0-6:x1-th-1,CW=2.6;
+ const rooms=!L2&&(kind==='office'||kind==='res'||kind==='clinic'),zm=cz,xm=cx,gaps=[],cross=w>=34&&rooms;
  let gx1=x0+Math.max(9,w*.3),gx2=x0+w*.72;if(hS&&gx2>sx0-6)gx2=sx0-6;
  if(rooms){gaps.push(gx1,gx2);K.push([x0,zm-.9,x1,zm+.9]);if(cross)K.push([xm-.9,z0,xm+.9,z1])}
+ const divs=[],dg=[];
+ if(L2){const m=Math.max(2,Math.round((xE-xs)/13)),rw=(xE-xs)/m;for(let i=1;i<m;i++)divs.push(xs+i*rw);for(let i=0;i<m;i++)dg.push(xs+(i+.5)*rw);
+  K.push([x0,z0,xs,z1],[x0,zm-CW-.9,x1,zm+CW+.9],[xE,z0,x1,z1]);for(const q of divs)K.push([q-.9,z0,q+.9,z1]);for(const g of dg)K.push([g-2.4,zm-CW-4.5,g+2.4,zm-CW+.4],[g-2.4,zm+CW-.4,g+2.4,zm+CW+4.5])}
  const wallLine=(y,fixed,a,b,gl,alongX)=>{let p=a;const mk=(u,v)=>{if(v-u<.3)return;if(alongX)boxB(mid(u,v),y,fixed,v-u,FH-.5,.3,0xd9dde6,{solid:true,v:.03});else boxB(fixed,y,mid(u,v),.3,FH-.5,v-u,0xd9dde6,{solid:true,v:.03})};
   for(const g of gl.slice().sort((q,r)=>q-r)){mk(p,g-1.6);p=g+1.6}mk(p,b)};
  for(let k=0;k<fl;k++){const y=T(k);
+  if(L2){wallLine(y,zm-CW,xs,xE,dg,true);wallLine(y,zm+CW,xs,xE,dg,true);for(const q of divs){boxB(q,y,mid(z0+th,zm-CW),.3,FH-.5,zm-CW-z0-th,0xd9dde6,{solid:true,v:.03});boxB(q,y,mid(zm+CW,z1-th),.3,FH-.5,z1-th-zm-CW,0xd9dde6,{solid:true,v:.03})}}
   if(rooms){wallLine(y,zm,x0+th,x1-th,gaps,true);if(cross){wallLine(y,xm,z0+th,zm-.15,[z0+d*.25],false);wallLine(y,xm,zm+.15,z1-th,[z0+d*.75],false)}}}
  const spot=(k,wd,dp,mg)=>{for(let t=0;t<70;t++){const px=x0+th+.8+wd/2+rnd()*(w-2*th-1.6-wd),pz=z0+th+.8+dp/2+rnd()*(d-2*th-1.6-dp),r=[px-wd/2-mg,pz-dp/2-mg,px+wd/2+mg,pz+dp/2+mg];
   if(K.some(q=>AB(r,q))||U[k].some(q=>AB(r,q)))continue;U[k].push([px-wd/2,pz-dp/2,px+wd/2,pz+dp/2]);return[px,pz]}return null};
  const area=(w-2)*(d-2),cols5=[0x8a3b3b,0x3f5f7a,0x6f7a6a,0xb8a37a,0x6a4a7a];
- for(let k=0;k<fl;k++){const y=T(k),A=area;
+ for(let k=0;k<fl;k++){const y=T(k),A=v2?area*.4:area;
   if(kind==='office'){for(let i=0;i<Math.floor(A/38);i++){const s=spot(k,1.8,.8,1.1);if(!s)break;boxB(s[0],y,s[1],1.8,.75,.8,0x7a5a3a,{solid:true,v:.08});boxB(s[0],y+.75,s[1]-.2,.55,.38,.08,0x35e0d0,{k:'E',em:.8,v:0});boxB(s[0],y,s[1]+.85,.5,.5,.5,0x2b2f3a,{v:.05})}
    for(let i=0;i<Math.floor(A/160);i++){const s=spot(k,.9,.5,.9);if(!s)break;boxB(s[0],y,s[1],.9,1.8,.5,0x59606b,{solid:true,v:.05})}}
   else if(kind==='res'){for(let i=0;i<Math.max(1,Math.floor(A/60));i++){const s=spot(k,2,1.5,.9);if(!s)break;boxB(s[0],y,s[1],2,.5,1.5,0x6a3a8a,{solid:true,v:.08});boxB(s[0],y+.5,s[1]-.55,.7,.14,.4,0xe8e8ee,{v:.03})}
@@ -785,6 +795,10 @@ function hollow(o){
   else if(kind==='ruin'){for(let i=0;i<Math.floor(A/36);i++){const sz=.5+rnd()*1.1,s=spot(k,sz*1.5,sz*1.5,.9);if(!s)break;boxB(s[0],y,s[1],sz*1.2,sz*.6+rnd()*.5,sz,0x6a6058,{solid:true,v:.25,ry:rnd()*3})}}
   else if(kind==='mil'){for(let i=0;i<Math.floor(A/42);i++){const s=spot(k,2,.9,1);if(!s)break;boxB(s[0],y,s[1],2,.5,.9,0x4a5a3a,{solid:true,v:.08})}
    for(let i=0;i<Math.floor(A/70);i++){const s=spot(k,1.2,1.2,.9);if(s)boxB(s[0],y,s[1],1.2,1.2,1.2,0x7a5a32,{solid:true,v:.1})}}
+  if(v2){const by=y+(k===0?.2:0),bc=o.band||0x3d6a4a,seg=(fx,a,b,al,gp)=>{let p=a;const mk=(u,v)=>{if(v-u<.2)return;if(al)boxB(mid(u,v),by,fx,v-u,1.6,.07,bc,{v:.04});else boxB(fx,by,mid(u,v),.07,1.6,v-u,bc,{v:.04})};
+    for(const g of gp.slice().sort((q,r)=>q-r)){mk(p,g[0]);p=g[1]}mk(p,b)};
+   const dN=k===0&&hasN?[[dc-gw,dc+gw]]:[],dS=k===0&&hasS?[[dc-gw,dc+gw]]:[];seg(z0+th+.035,x0+th,x1-th,true,dN);seg(z1-th-.035,x0+th,x1-th,true,dS);seg(x0+th+.035,z0+th,z1-th,false,[]);seg(x1-th-.035,z0+th,z1-th,false,[]);
+   const xb=hS?sx0-1:x1-th-1;for(let bx=xs+(L2?0:xe+2.8-xs)+4;bx<xb;bx+=8)boxB(bx,y+FH-.4-.55,cz,.5,.55,d-2*th,0x5a5f6a,{v:.04})}
   // luces de techo
   for(let lx=x0+4;lx<x1-2;lx+=8)for(let lz=z0+4;lz<z1-2;lz+=8){const r=[lx-1.3,lz-.6,lx+1.3,lz+.6];if(K.some(q=>AB(r,q)))continue;boxB(lx,y+FH-.46,lz,2.2,.06,.7,0xfff1c0,{k:'E',em:1.1,v:0})}}
  // cofres adentro
@@ -858,7 +872,7 @@ function gspot(r,wd,dp,mg,occ){for(let t=0;t<80;t++){const x=r[0]+wd/2+mg+rnd()*
  if(occ.some(o=>AB(q,o)))continue;if(BLD.some(b=>AB(q,[b.x0-1,b.z0-1,b.x1+1,b.z1+1])))continue;occ.push([x-wd/2,z-dp/2,x+wd/2,z+dp/2]);return[x,z]}return null}
 // ---------- campamento ----------
 function camp(r,o){const mx=mid(r[0],r[2]),mz=mid(r[1],r[3]),ax=r[0]+6,bx=r[2]-6,cz0=r[1]+6,cz1=r[3]-6,occ=[],gt=5;
- flatB(r[0]+3,r[1]+3,r[2]-3,r[3]-3,.17,0x7d6a4a,2,.12);NOTREE.push([r[0],r[1],r[2],r[3]]);
+ flatB(r[0]+3,r[1]+3,r[2]-3,r[3]-3,.23,0x7d6a4a,2,.12);NOTREE.push([r[0],r[1],r[2],r[3]]);
  const sb=(x,z,w,d)=>{boxB(x,0,z,w,1,d,0xb59a6a,{solid:true,v:.12});occ.push([x-w/2,z-d/2,x+w/2,z+d/2])};
  sb(mid(ax,mx-gt),cz0,mx-gt-ax,.9);sb(mid(mx+gt,bx),cz0,bx-mx-gt,.9);sb(mid(ax,mx-gt),cz1,mx-gt-ax,.9);sb(mid(mx+gt,bx),cz1,bx-mx-gt,.9);
  sb(ax,mid(cz0,mz-gt),.9,mz-gt-cz0);sb(ax,mid(mz+gt,cz1),.9,cz1-mz-gt);sb(bx,mid(cz0,mz-gt),.9,mz-gt-cz0);sb(bx,mid(mz+gt,cz1),.9,cz1-mz-gt);
@@ -879,8 +893,8 @@ function houseGrid(r,p2){const I=[r[0]+7,r[1]+7,r[2]-7,r[3]-7],cw=15,ch=13,gx=11
  tw=nx*cw+(nx-1)*gx,tz=nz*ch+(nz-1)*gz,sx=I[0]+((I[2]-I[0])-tw)/2,sz=I[1]+((I[3]-I[1])-tz)/2,rm=mid(r[1],r[3]);
  for(let i=0;i<nx;i++)for(let j=0;j<nz;j++){const x=sx+i*(cw+gx),z=sz+j*(ch+gz);hollow({x0:x,z0:z,x1:x+cw,z1:z+ch,fl:rnd()<p2?2:1,door:z+ch/2<rm?'N':'S',dx:x+11,back:true,sty:'res',kind:'res',gw:1.1,gh:2.8,chests:rnd()<.55?1:0})}
  scatterT([r[0]+5,r[1]+5,r[2]-5,r[3]-5],Math.round((r[2]-r[0])*(r[3]-r[1])/1000),2.6)}
-function parkLot(r,rows,zs,prob){flatB(r[0],r[1],r[2],r[3],.17,0x353842,2,.06);NOTREE.push(r);
- for(const z of zs){for(let x=r[0]+2;x<r[2]-2;x+=3.4)flatB(x-.06,z-2.6,x+.06,z+2.6,.18,0xe9e9ee,3,.03)}
+function parkLot(r,rows,zs,prob){flatB(r[0],r[1],r[2],r[3],.23,0x353842,2,.06);NOTREE.push(r);
+ for(const z of zs){for(let x=r[0]+2;x<r[2]-2;x+=3.4)flatB(x-.06,z-2.6,x+.06,z+2.6,.24,0xe9e9ee,3,.03)}
  for(const z of zs)for(let x=r[0]+3.5;x<r[2]-3;x+=3.4)if(rnd()<prob)carX(x,z+(rnd()-.5)*.6,(rnd()-.5)*.1)}
 function commercial(r){const I=[r[0]+6,r[1]+6,r[2]-6,r[3]-6];
  hollow({x0:I[0],z0:I[1],x1:I[0]+46,z1:I[1]+30,fl:1,fh:5,door:'S',back:true,sty:'com',kind:'store',gw:3,gh:4.2,chests:3,sign:'SUPERMERCADO',sbg:'#7a1f4e',sfg:'#ffe9f8',dx:I[0]+23});
@@ -889,22 +903,25 @@ function commercial(r){const I=[r[0]+6,r[1]+6,r[2]-6,r[3]-6];
  parkLot([I[0],I[1]+38,I[2],I[3]-26],0,[I[1]+44,I[1]+51,I[1]+58,I[1]+65].filter(z=>z<I[3]-30),.55);
  scatterT([r[0]+4,r[1]+4,r[2]-4,r[3]-4],10,2.5)}
 function parkBig(r){const cx=mid(r[0],r[2]),cz=mid(r[1],r[3]);
- for(const q of[[cx-2.3,r[1]+4,cx+2.3,r[3]-4],[r[0]+4,cz-2.3,r[2]-4,cz+2.3]]){flatB(q[0],q[1],q[2],q[3],.18,0xc9b98a,3,.05);NOTREE.push(q)}
+ for(const q of[[cx-2.3,r[1]+4,cx+2.3,r[3]-4],[r[0]+4,cz-2.3,r[2]-4,cz+2.3]]){flatB(q[0],q[1],q[2],q[3],.24,0xc9b98a,3,.05);NOTREE.push(q)}
  cylB(cx,0,cz,7,.9,0x9a9fa8,{seg:18,solid:true});cylB(cx,.6,cz,6.2,.45,0x3b9ed8,{seg:18,k:'E',em:.6,v:.02});cylB(cx,.9,cz,.9,3.5,0xb9bec8,{seg:8});cylB(cx,4.2,cz,2.2,.4,0xb9bec8,{seg:12});NOTREE.push([cx-8,cz-8,cx+8,cz+8]);
  hollow({x0:cx+16,z0:cz-32,x1:cx+32,z1:cz-20,fl:1,door:'S',back:true,sty:'mkt',kind:'open',chests:2,sign:'PABELLÓN',gw:2});
  for(const[dx,dz,ry]of[[0,-12,0],[0,12,Math.PI],[-12,0,-Math.PI/2],[12,0,Math.PI/2],[-30,3.6,Math.PI],[30,-3.6,0],[3.6,-34,-Math.PI/2],[3.6,34,Math.PI/2]])benchX(cx+dx,cz+dz,ry);
  scatterT([r[0]+3,r[1]+3,r[2]-3,r[3]-3],95,2.4)}
-function officeBlock(r){const I=[r[0]+8,r[1]+8,r[2]-8,r[3]-8];
+function officeBlock(r,v2){const I=[r[0]+8,r[1]+8,r[2]-8,r[3]-8];
+ if(v2){hollow({x0:I[0],z0:I[1],x1:I[0]+46,z1:I[1]+32,fl:3,door:'S',back:true,sty:'ofi',kind:'office',chests:3,sign:'OFICINAS',v2:true,band:0x3d6a4a});
+  hollow({x0:I[2]-46,z0:I[3]-32,x1:I[2],z1:I[3],fl:4,door:'N',back:true,sty:'res',kind:'res',chests:3,sign:'RESIDENCIAL',v2:true,band:0x8a4a2f});
+  flatB(I[0]+50,I[1]+4,I[2]-50,I[3]-4,.23,0x9a98a4,2,.05);NOTREE.push([I[0]+47,I[1]+4,I[2]-47,I[3]-4]);scatterT([r[0]+4,r[1]+4,r[2]-4,r[3]-4],14,2.5);return}
  hollow({x0:I[0],z0:I[1],x1:I[0]+32,z1:I[1]+26,fl:6,door:'S',back:true,sty:'ofi',kind:'office',chests:3,sign:'OFICINAS',gw:2.2});
  hollow({x0:I[2]-32,z0:I[3]-26,x1:I[2],z1:I[3],fl:5,door:'N',back:true,sty:'ofi',kind:'office',chests:3,sign:'CORPORATIVO',gw:2.2});
- flatB(I[0]+33,I[1]+4,I[2]-33,I[3]-4,.17,0x9a98a4,2,.05);NOTREE.push([I[0]+33,I[1]+4,I[2]-33,I[3]-4]);scatterT([r[0]+4,r[1]+4,r[2]-4,r[3]-4],14,2.5)}
-function towerBlock(r){const cx=mid(r[0],r[2]),cz=mid(r[1],r[3]);flatB(r[0]+6,r[1]+6,r[2]-6,r[3]-6,.17,0x9a98a4,2,.05);NOTREE.push([r[0]+6,r[1]+6,r[2]-6,r[3]-6]);
- hollow({x0:cx-17,z0:cz-13,x1:cx+17,z1:cz+13,fl:8,door:'N',back:true,sty:'tow',kind:'office',chests:7,sign:'TORRE NOVA',gw:2.6,gh:3.4,el:true,name:'torre'});
+ flatB(I[0]+33,I[1]+4,I[2]-33,I[3]-4,.23,0x9a98a4,2,.05);NOTREE.push([I[0]+33,I[1]+4,I[2]-33,I[3]-4]);scatterT([r[0]+4,r[1]+4,r[2]-4,r[3]-4],14,2.5)}
+function towerBlock(r){const cx=mid(r[0],r[2]),cz=mid(r[1],r[3]);flatB(r[0]+6,r[1]+6,r[2]-6,r[3]-6,.23,0x9a98a4,2,.05);NOTREE.push([r[0]+6,r[1]+6,r[2]-6,r[3]-6]);
+ hollow({x0:cx-24,z0:cz-17,x1:cx+24,z1:cz+17,fl:12,door:'N',back:true,sty:'tow',kind:'office',chests:9,sign:'TORRE NOVA',gw:3,gh:5.2,el:true,name:'torre',v2:true,band:0x2f5f6a});
  for(const[dx,dz]of[[-32,-30],[32,-30],[-32,30],[32,30]]){cylB(cx+dx,0,cz+dz,4,.7,0x9a9fa8,{seg:12,solid:true});cylB(cx+dx,.5,cz+dz,3.4,.4,0x3b9ed8,{seg:12,k:'E',em:.5,v:.02})}
  for(const dx of[-22,-11,11,22])benchX(cx+dx,cz-20,0);scatterT([r[0]+4,r[1]+4,r[2]-4,r[3]-4],14,3)}
 function gasBlock(r){const I=[r[0]+6,r[1]+6,r[2]-6,r[3]-6];
  hollow({x0:I[0],z0:I[1]+4,x1:I[0]+22,z1:I[1]+17,fl:1,fh:4,door:'S',back:true,sty:'gas',kind:'store',gw:1.8,gh:3.4,chests:1,sign:'TIENDA 24H',sbg:'#8a1f1f',sfg:'#fff0b0'});
- const cx=I[0]+6,cz=I[1]+34;flatB(I[0],I[1]+22,I[0]+50,I[1]+50,.17,0x8a8d96,2,.05);NOTREE.push([I[0],I[1]+22,I[0]+50,I[1]+50]);
+ const cx=I[0]+6,cz=I[1]+34;flatB(I[0],I[1]+22,I[0]+50,I[1]+50,.23,0x8a8d96,2,.05);NOTREE.push([I[0],I[1]+22,I[0]+50,I[1]+50]);
  for(const[dx,dz]of[[-8,-5],[8,-5],[-8,5],[8,5]])boxB(cx+dx+10,0,cz+dz,.5,4.6,.5,0xe8e8ee,{solid:true,v:.03});
  boxB(cx+10,4.6,cz,19,.5,12,0xe63946,{v:.03});boxB(cx+10,5.1,cz,19.2,.16,12.2,0xffffff,{v:.02});boxB(cx+10,4.55,cz,17.5,.06,10.5,0xffe9a8,{k:'E',em:1.2,v:.02});
  for(const dx of[-4,4,12,20]){boxB(cx+dx,0,cz-.6,.6,1.5,.9,0x2b2f3a,{solid:true,v:.03});boxB(cx+dx,1.2,cz-.6,.62,.4,.92,0xe63946,{v:.03});boxB(cx+dx,0,cz+.9,.6,1.5,.9,0x2b2f3a,{solid:true,v:.03})}
@@ -931,7 +948,7 @@ function marketRuins(r){const I=[r[0]+8,r[1]+8,r[2]-8,r[3]-8];let k=0;
  for(let i=0;i<3;i++)for(let j=0;j<2;j++){const w=22,d=17,x=I[0]+i*((I[2]-I[0]-w)/2),z=I[1]+j*(I[3]-I[1]-d);hollow({x0:x,z0:z,x1:x+w,z1:z+d,fl:1+((rnd()*2)|0),door:j?'N':'S',back:true,sty:'mkt',kind:'ruin',fh:4,chests:2,gw:2,gh:3.4})}
  const occ=[];for(let i=0;i<22;i++){const sz=.6+rnd()*1.3,s=gspot([r[0]+4,r[1]+4,r[2]-4,r[3]-4],sz*1.5,sz*1.5,.9,occ);if(s)boxB(s[0],0,s[1],sz*1.6,sz*.7+rnd()*.5,sz*1.2,0x6a6058,{solid:true,v:.25,ry:rnd()*3})}
  scatterT([r[0]+4,r[1]+4,r[2]-4,r[3]-4],8,3)}
-function riverwalk(r){const cx=mid(r[0],r[2]);flatB(cx-2,r[1]+4,cx+2,r[3]-4,.18,0xc9b98a,3,.05);NOTREE.push([cx-2,r[1]+4,cx+2,r[3]-4]);
+function riverwalk(r){const cx=mid(r[0],r[2]);flatB(cx-2,r[1]+4,cx+2,r[3]-4,.24,0xc9b98a,3,.05);NOTREE.push([cx-2,r[1]+4,cx+2,r[3]-4]);
  for(let z=r[1]+14;z<r[3]-10;z+=24)benchX(cx+3.6,z,Math.PI/2);scatterT([r[0]+3,r[1]+3,r[2]-3,r[3]-3],Math.round((r[3]-r[1])/6),2)}
 function eastBank(r,n,face){const I=[r[0]+6,r[1]+6,r[2]-6,r[3]-6],step=(I[3]-I[1])/n;
  for(let i=0;i<n;i++){const z=I[1]+i*step+(step-24)/2;hollow({x0:I[0],z0:z,x1:I[2],z1:z+24,fl:1,fh:6,door:'S',back:true,sty:'ind',kind:'warehouse',gw:3,gh:4.6,chests:2,dx:mid(I[0],I[2]),sign:'DEPÓSITO',sbg:'#1b2438',sfg:'#ffd23f'})}
@@ -940,7 +957,7 @@ function eastBank(r,n,face){const I=[r[0]+6,r[1]+6,r[2]-6,r[3]-6],step=(I[3]-I[1
 camp(inset(bl(1,0)),{tents:8,chests:11,crates:18,hutChests:4});camp(inset(bl(3,0)),{tents:6,chests:9,crates:14,hutChests:3});
 ruinBlock(bl(0,0),4);industrial(bl(2,0));riverwalk(bl(4,0));
 houseGrid(bl(0,1),.4);commercial(bl(1,1));parkBig(bl(2,1));officeBlock(bl(3,1));riverwalk(bl(4,1));
-gasBlock(bl(0,2));officeBlock(bl(1,2));towerBlock(bl(2,2));clinicBlock(bl(3,2));riverwalk(bl(4,2));
+gasBlock(bl(0,2));officeBlock(bl(1,2),true);towerBlock(bl(2,2));clinicBlock(bl(3,2));riverwalk(bl(4,2));
 houseGrid(bl(0,3),.4);marketRuins(bl(1,3));industrial(bl(2,3));houseGrid(bl(3,3),.4);riverwalk(bl(4,3));
 eastBank([229,-210,270,-7],4);eastBank([229,7,270,210],4);
 function inset(r){return[r[0]+4,r[1]+4,r[2]-4,r[3]-4]}
@@ -958,7 +975,7 @@ const chunks=[];
 for(const key in G){const g=G[key];if(!g.pos.length)continue;const geo=new THREE.BufferGeometry();
  geo.setAttribute('position',new THREE.Float32BufferAttribute(g.pos,3));geo.setAttribute('normal',new THREE.Float32BufferAttribute(g.nor,3));geo.setAttribute('color',new THREE.Float32BufferAttribute(g.col,3));
  if(g.uv.length)geo.setAttribute('uv',new THREE.Float32BufferAttribute(g.uv,2));
- const m=new THREE.Mesh(geo,g.kind==='E'?emiM:g.kind==='W'?winMatBig:flM[g.kind]||litM);m.castShadow=g.kind==='L'||g.kind==='W';m.receiveShadow=g.kind!=='E';
+ const m=new THREE.Mesh(geo,g.kind==='E'?emiM:g.kind==='W'?winMatBig:g.kind==='T'?tileM:flM[g.kind]||litM);m.castShadow=g.kind==='L'||g.kind==='W';m.receiveShadow=g.kind!=='E';
  let a=1e9,b=-1e9,c=1e9,d=-1e9;for(let i=0;i<g.pos.length;i+=3){const x=g.pos[i],z=g.pos[i+2];if(x<a)a=x;if(x>b)b=x;if(z<c)c=z;if(z>d)d=z}
  m.userData={cx:(a+b)/2,cz:(c+d)/2,r:Math.hypot(b-a,d-c)/2};scene.add(m);meshes.push(m);chunks.push(m)}
 for(const k in G)delete G[k];   // libera la memoria de los lotes ya convertidos
