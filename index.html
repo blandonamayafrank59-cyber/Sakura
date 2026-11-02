@@ -235,7 +235,7 @@ c=mix(c,uCl*(.85+.5*pow(s,3.)*(1.-uSt)),cl*.7);
 gl_FragColor=vec4(c,1.);}`}));
 sky.renderOrder=-10;sky.frustumCulled=false;scene.add(sky);
 scene.fog=new THREE.Fog(0xbcd8f2,60,210);
-const cam=new THREE.PerspectiveCamera(72,1,.1,400);cam.rotation.order='YXZ';
+const cam=new THREE.PerspectiveCamera(72,1,.3,400);cam.rotation.order='YXZ';
 const hemi=new THREE.HemisphereLight(0xcfd9ff,0x7a6a8a,.75);scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xffd9b0,1);sun.position.set(-70,80,50);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);const sc=sun.shadow.camera;sc.left=sc.bottom=-60;sc.right=sc.top=60;sc.near=10;sc.far=260;sun.shadow.bias=-.0006;scene.add(sun,sun.target);
 R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFSoftShadowMap;R.toneMapping=useComp?THREE.NoToneMapping:THREE.ACESFilmicToneMapping;R.toneMappingExposure=1.2;
@@ -244,7 +244,7 @@ function resize(){R.setSize(innerWidth,innerHeight,false);cam.aspect=innerWidth/
 addEventListener('resize',resize);resize();
 if(useComp){try{
 const sz=new THREE.Vector2();R.getDrawingBufferSize(sz);
-const rt=new THREE.WebGLMultisampleRenderTarget(sz.x,sz.y,{type:THREE.HalfFloatType,format:THREE.RGBAFormat,minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter});rt.samples=4;
+const rt=new THREE.WebGLMultisampleRenderTarget(sz.x,sz.y,{type:THREE.HalfFloatType,format:THREE.RGBAFormat,minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter,depthBuffer:true,stencilBuffer:true});rt.samples=4;
 comp=new THREE.EffectComposer(R,rt);comp.addPass(new THREE.RenderPass(scene,cam));
 bloom=new THREE.UnrealBloomPass(new THREE.Vector2(innerWidth/2,innerHeight/2),.75,.65,1.35);comp.addPass(bloom);
 grade=new THREE.ShaderPass({uniforms:{tDiffuse:{value:null},rb:{value:0},ex:{value:1.45},tm:{value:0},cl:{value:1}},
@@ -648,7 +648,7 @@ function flatB(x0,z0,x1,z1,y,hex,layer,v){const g=bk(env.big?'F1':'F'+layer,(x0+
 function cylB(x,y0,z,r,h,hex,o){o=o||{};const seg=o.seg||10,g=bk(o.k||'L',x,z),c=jit(hexc(hex),o.v===undefined?.06:o.v),ref=[OX+x,y0+h/2,z],y1=y0+h;
  const pt=(a,y,rr)=>[OX+x+Math.cos(a)*rr,y,z+Math.sin(a)*rr];
  for(let i=0;i<seg;i++){const a0=i/seg*6.2832,a1=(i+1)/seg*6.2832;quadO(g,pt(a0,y0,r),pt(a1,y0,r),pt(a1,y1,r),pt(a0,y1,r),c,ref);
-  if(o.cap!==false)triO(g,[OX+x,y1,z],pt(a0,y1,r),pt(a1,y1,r),c,ref)}
+  if(o.cap!==false)triO(g,[OX+x,y1,z],pt(a0,y1,r),pt(a1,y1,r),c,ref);if(y0>.05&&o.bot!==false)triO(g,[OX+x,y0,z],pt(a1,y0,r),pt(a0,y0,r),c,ref)}
  stats.boxes++;if(o.solid){addCol({a:OX+x-r,b:OX+x+r,c:z-r,d:z+r,t:y1,y0:y0>.01?y0:undefined});stats.solids++}}
 function coneB(x,y0,z,r,h,hex,seg){seg=seg||10;const g=bk('L',x,z),c=jit(hexc(hex),.06),ref=[OX+x,y0+h*.3,z];
  for(let i=0;i<seg;i++){const a0=i/seg*6.2832,a1=(i+1)/seg*6.2832;triO(g,[OX+x+Math.cos(a0)*r,y0,z+Math.sin(a0)*r],[OX+x+Math.cos(a1)*r,y0,z+Math.sin(a1)*r],[OX+x,y0+h,z],c,ref)}stats.boxes++}
@@ -692,7 +692,7 @@ const wcv=document.createElement('canvas'),ecv=document.createElement('canvas');
 const mkT=c=>{const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.magFilter=THREE.NearestFilter;return t};
 const winMatBig=new THREE.MeshLambertMaterial({map:mkT(wcv),vertexColors:true,emissive:0xffffff,emissiveMap:mkT(ecv),emissiveIntensity:useComp?2.3:.9});
 const tcv=document.createElement('canvas');tcv.width=tcv.height=64;{const x=tcv.getContext('2d');x.fillStyle='#dcdcdc';x.fillRect(0,0,64,64);x.fillStyle='#8f8f96';x.fillRect(0,0,64,3);x.fillRect(0,0,3,64);x.fillStyle='#ececec';for(let i=0;i<26;i++)x.fillRect((rnd()*60)|0,(rnd()*60)|0,3,2)}
-const tileM=new THREE.MeshLambertMaterial({map:mkT(tcv),vertexColors:true});let WX=4,WY=4,PLAIN=false;
+const tileM=new THREE.MeshLambertMaterial({map:mkT(tcv),vertexColors:true,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-4});let WX=4,WY=4,PLAIN=false;
 function tileQ(x0,z0,x1,z1,y,hex){if(x1-x0<.05||z1-z0<.05)return;const g=bk('T',(x0+x1)/2,(z0+z1)/2),c=jit(hexc(hex),.03),X0=OX+x0,X1=OX+x1,ref=[(X0+X1)/2,y-1,(z0+z1)/2];
  quadO(g,[X0,y,z0],[X0,y,z1],[X1,y,z1],[X1,y,z0],c,ref,[[x0/2.5,z0/2.5],[x0/2.5,z1/2.5],[x1/2.5,z1/2.5],[x1/2.5,z0/2.5]])}
 // pared: la cara de afuera (out = N,S,E,W) lleva ventanas, las demás van lisas. Se junta con todo lo demás en lotes.
@@ -730,11 +730,17 @@ function makeEl(p){const {sx0,sx1,sz0,sz1,gz0,gz1,fl,T,glassE}=p,SH=T(fl)+4,wc=0
  const cwid=sx1-sx0,cdep=sz1-sz0,parts=[];const addp=(m,dx,dy,dz)=>{scene.add(m);meshes.push(m);parts.push([m,dx,dy,dz])};
  const bxm=(w,h,d,mt)=>new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mt);
  const gmat=new THREE.MeshLambertMaterial({color:0xa8d4ff,transparent:true,opacity:.16,depthWrite:false});
- if(glassE){addp(bxm(.03,2.1,cdep-.08,gmat),cwid/2-.03,1.75,0);addp(bxm(.08,.7,cdep,steel),cwid/2-.04,.35,0);addp(bxm(.08,.08,cdep,steel),cwid/2-.04,2.76,0)}else addp(bxm(.08,2.75,cdep,steel),cwid/2-.04,1.4,0);addp(bxm(cwid,2.75,.08,steel),0,1.4,-cdep/2+.04);addp(bxm(cwid,2.75,.08,steel),0,1.4,cdep/2-.04);
- for(const sz of[-1,1]){addp(bxm(.04,2.5,.1,bl),cwid/2-.1,1.4,sz*(cdep/2-.35));addp(bxm(.1,2.5,.04,bl),-cwid/2+.5,1.4,sz*(cdep/2-.1))}
+ if(glassE){const ow=new THREE.Mesh(new THREE.PlaneGeometry(sz1-sz0+.4,SH),new THREE.MeshLambertMaterial({color:0x34414f}));ow.rotation.y=Math.PI/2;ow.position.set(OX+sx1+.1,SH/2,mid(sz0,sz1));scene.add(ow);meshes.push(ow);
+  addp(bxm(.03,2.1,cdep-.08,gmat),cwid/2-.03,1.75,0);addp(bxm(.08,.7,cdep,steel),cwid/2-.04,.35,0);addp(bxm(.08,.08,cdep,steel),cwid/2-.04,2.76,0)}else addp(bxm(.08,2.75,cdep,steel),cwid/2-.04,1.4,0);addp(bxm(cwid,2.75,.08,steel),0,1.4,-cdep/2+.04);addp(bxm(cwid,2.75,.08,steel),0,1.4,cdep/2-.04);
+ for(const sz of[-1,1]){if(!glassE)addp(bxm(.03,2.5,.05,bl),cwid/2-.1,1.4,sz*(cdep/2-.35));addp(bxm(.05,2.5,.025,bl),-cwid/2+.5,1.4,sz*(cdep/2-.09))}
  addp(bxm(cwid-.3,.04,.05,bl),0,2.66,-cdep/2+.15);addp(bxm(cwid-.3,.04,.05,bl),0,2.66,cdep/2-.15);addp(bxm(.05,.04,cdep-.3,bl),cwid/2-.15,2.66,0);
- addp(bxm(.07,.07,cdep-.7,rail),cwid/2-.14,.95,0);addp(bxm(.07,.07,cdep-.7,rail),0,.95,cdep/2-.12);
- addp(bxm(.05,.8,.34,dkm),-cwid/2+.9,1.25,cdep/2-.1);for(let i=0;i<4;i++)addp(bxm(.07,.06,.06,bl),-cwid/2+.9,1.0+i*.16,cdep/2-.1);
+ addp(bxm(.07,.07,cdep-.7,rail),cwid/2-.14,.95,0);addp(bxm(cwid-.7,.07,.07,rail),0,.95,cdep/2-.12);
+ const pcv=document.createElement('canvas');pcv.width=128;pcv.height=384;const pcx=pcv.getContext('2d'),ptx=new THREE.CanvasTexture(pcv);let plab=-1;
+ const pmat=new THREE.MeshBasicMaterial({map:ptx});pmat.color.setRGB(HBm*1.5,HBm*1.5,HBm*1.5);
+ const drawPanel=(cf)=>{if(cf===plab)return;plab=cf;pcx.fillStyle='#1a1f27';pcx.fillRect(0,0,128,384);pcx.strokeStyle='#8d96a2';pcx.lineWidth=6;pcx.strokeRect(3,3,122,378);
+  const n=NF+1,hh=(384-24)/n;for(let i=0;i<n;i++){const f=NF-i,cy=12+hh*i+hh/2,on=f===cf;pcx.beginPath();pcx.arc(64,cy,Math.min(34,hh/2-4),0,6.2832);pcx.fillStyle=on?'#35e0d0':'#2c333d';pcx.fill();pcx.lineWidth=3;pcx.strokeStyle=on?'#ffffff':'#6b7685';pcx.stroke();
+   pcx.fillStyle=on?'#04121f':'#cfe8ff';pcx.font='bold '+Math.min(34,hh*.6|0)+'px sans-serif';pcx.textAlign='center';pcx.textBaseline='middle';pcx.fillText(f===0?'PB':f===NF?'AZ':String(f),64,cy+2)}ptx.needsUpdate=true};
+ const pan=new THREE.Mesh(new THREE.PlaneGeometry(.42,1.26),pmat);pan.rotation.y=Math.PI;addp(pan,-cwid/2+.8,1.3,cdep/2-.09);drawPanel(0);
  const scv=document.createElement('canvas');scv.width=256;scv.height=128;{const c=scv.getContext('2d');const g=c.createLinearGradient(0,0,0,128);g.addColorStop(0,'#2a4f7a');g.addColorStop(.7,'#e0a070');g.addColorStop(1,'#1b2438');c.fillStyle=g;c.fillRect(0,0,256,128);c.fillStyle='#10151f';for(let i=0;i<26;i++){const w=6+rnd()*14,h=20+rnd()*60;c.fillRect(i*10,128-h,w,h)}c.fillStyle='#ffd9a0';for(let i=0;i<60;i++)c.fillRect(rnd()*256,60+rnd()*60,2,2);c.fillStyle='#cfe8ff';c.font='bold 22px sans-serif';c.fillText('NOVA',100,28)}
  const scm=new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(scv)});scm.color.setRGB(.8*HBm*1.6,.8*HBm*1.6,.8*HBm*1.6);
  const scr=new THREE.Mesh(new THREE.PlaneGeometry(cdep-.9,1.5),scm);scr.rotation.y=-Math.PI/2;if(!glassE)addp(scr,cwid/2-.09,1.55,0);
@@ -743,7 +749,7 @@ function makeEl(p){const {sx0,sx1,sz0,sz1,gz0,gz1,fl,T,glassE}=p,SH=T(fl)+4,wc=0
  let dlab='';const drawLab=(t)=>{if(t===dlab)return;dlab=t;dcx.fillStyle='#04121f';dcx.fillRect(0,0,128,48);dcx.fillStyle='#5ad1ff';dcx.font='bold 34px sans-serif';dcx.textAlign='center';dcx.textBaseline='middle';dcx.fillText(t,64,26);dtx.needsUpdate=true};
  const el={y:T(0),f:0,tf:0,moving:false,pending:false,T,NF,cab,doors,sx0,sx1,sz0,sz1,gz0,gz1,
   place(){cab.t=el.y;cab.y0=el.y-.3;const px=OX+(sx0+sx1)/2,pz=(sz0+sz1)/2;cfl.position.set(px,el.y-.15,pz);cro.position.set(px,el.y+2.7,pz);clt.position.set(px,el.y+2.6,pz);for(const q of parts)q[0].position.set(px+q[1],el.y+q[2],pz+q[3]);
-   const fi=Math.max(0,Math.min(NF,Math.round((el.y-T(0))/(T(1)-T(0))))),arrow=el.moving?(T(el.tf)>el.y?' ▲':' ▼'):'';drawLab((fi===0?'PB':fi===NF?'AZ':String(fi))+arrow)},
+   const fi=Math.max(0,Math.min(NF,Math.round((el.y-T(0))/(T(1)-T(0))))),arrow=el.moving?(T(el.tf)>el.y?' ▲':' ▼'):'';drawLab((fi===0?'PB':fi===NF?'AZ':String(fi))+arrow);drawPanel(fi)},
   setDoor(d){const o=d.o;d.col.y0=o>.5?1e9:d.yb;d.dA.position.z=d.zA-d.sh*o;d.dB.position.z=d.zB+d.sh*o;d.dA.visible=d.dB.visible=o<.98},
   zone(d,P){return P.x>OX+sx0-.9&&P.x<OX+sx0+.45&&P.z>gz0-.5&&P.z<gz1+.5&&Math.abs(P.y-d.yb)<2.4},
   go(f){f=Math.max(0,Math.min(NF,f|0));if(f===el.f&&!el.moving){el.pending=false;return}el.tf=f;el.pending=true},
@@ -918,7 +924,7 @@ function novaTower(cx,cz){
   // cara interior: vidrio con luz de día, marco y cortinas
   const ix=face==='W'?x0+.44:face==='E'?x1-.44:u,iz=face==='N'?z0+.44:face==='S'?z1-.44:u;
   boxB(ix,y,iz,fw?w:.06,h,fw?.06:w,0x9cc3e6,{v:.03});
-  boxB(ix,y-.08,iz,fw?w+.2:.1,.1,fw?.1:w+.2,0x2a2e36,{v:.02});boxB(ix,y+h-.02,iz,fw?w+.2:.1,.1,fw?.1:w+.2,0x2a2e36,{v:.02});boxB(ix,y+h*.5,iz,fw?.07:.1,h,fw?.1:.07,0x2a2e36,{v:.02});
+  boxB(ix,y-.08,iz,fw?w+.2:.1,.1,fw?.1:w+.2,0x2a2e36,{v:.02});boxB(ix,y+h-.02,iz,fw?w+.2:.1,.1,fw?.1:w+.2,0x2a2e36,{v:.02});
   for(const e of[-1,1]){const cu=fw?ix+e*(w/2+.4):ix,cv=fw?iz:iz+e*(w/2+.4);boxB(cu,y-.2,cv,fw?.55:.14,h+.5,fw?.14:.55,0xb9aa94,{v:.1})}};
  const balN=[[x0+3,x0+11],[x0+17,x0+27]],glassX=x1-14;
  for(let k=0;k<FLn;k++){
